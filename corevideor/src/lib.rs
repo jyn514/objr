@@ -1,1 +1,1 @@
-use coregraphicsr::CGDirectDisplayID;
+extern crate coregraphicsr;
