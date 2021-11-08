@@ -1,6 +1,6 @@
 extern crate self as objr;
 
-mod m {
+pub mod m {
     pub trait Trait {
         /// [objr]
         fn f() {}
@@ -9,5 +9,3 @@ mod m {
         fn f() {}
     }
 }
-
-pub use m::Trait;
