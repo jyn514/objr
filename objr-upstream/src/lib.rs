@@ -5,7 +5,7 @@ mod m {
         /// [objr]
         fn f() {}
     }
-    impl <T> Trait for T {
+    impl Trait for usize {
         fn f() {}
     }
 }
