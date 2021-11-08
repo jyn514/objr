@@ -1246,7 +1246,6 @@ mod arguments {
                                                                       &'a ActiveAutoreleasePool,
                                                                   (): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1272,7 +1271,6 @@ mod arguments {
                                                                         ():
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1337,7 +1335,6 @@ mod arguments {
                                                                       &'a ActiveAutoreleasePool,
                                                                   (a,): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1363,7 +1360,6 @@ mod arguments {
                                                                         (a,):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1431,7 +1427,6 @@ mod arguments {
                                                                   (a, b):
                                                                       Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1458,7 +1453,6 @@ mod arguments {
                                                                          b):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1526,7 +1520,6 @@ mod arguments {
                                                                   (a, b, c):
                                                                       Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1553,7 +1546,6 @@ mod arguments {
                                                                          c):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1625,7 +1617,6 @@ mod arguments {
                                                                   (a, b, c,
                                                                    d): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1653,7 +1644,6 @@ mod arguments {
                                                                          d):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1726,7 +1716,6 @@ mod arguments {
                                                                   (a, b, c, d,
                                                                    e): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1754,7 +1743,6 @@ mod arguments {
                                                                          e):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1830,7 +1818,6 @@ mod arguments {
                                                                    e, f):
                                                                       Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1859,7 +1846,6 @@ mod arguments {
                                                                          f):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1936,7 +1922,6 @@ mod arguments {
                                                                    e, f, g):
                                                                       Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -1965,7 +1950,6 @@ mod arguments {
                                                                          g):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -2044,7 +2028,6 @@ mod arguments {
                                                                    e, f, g,
                                                                    h): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -2075,7 +2058,6 @@ mod arguments {
                                                                          h):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -2155,7 +2137,6 @@ mod arguments {
                                                                    e, f, g, h,
                                                                    i): Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
@@ -2186,7 +2167,6 @@ mod arguments {
                                                                          i):
                                                                             Self)
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
-            use crate::performselector::objc_retainAutoreleasedReturnValue;
             loop { }
         }
         #[inline]
