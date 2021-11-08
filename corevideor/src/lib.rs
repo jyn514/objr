@@ -1,1 +1,1 @@
-extern crate coregraphicsr;
+extern crate objr_upstream;

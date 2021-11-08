@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 objr = {path = "../objr"}
-coregraphicsr = {path = "../coregraphicsr"}
+objr-upstream = {path = "../objr-upstream", package = "objr"}

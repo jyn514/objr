@@ -3,18 +3,11 @@
 version = 3
 
 [[package]]
-name = "coregraphicsr"
-version = "0.1.0"
-dependencies = [
- "objr 0.2.0",
-]
-
-[[package]]
 name = "corevideor"
 version = "0.1.0"
 dependencies = [
- "coregraphicsr",
  "objr 0.1.0",
+ "objr 0.2.0",
 ]
 
 [[package]]
