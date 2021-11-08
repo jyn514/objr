@@ -2589,12 +2589,7 @@ mod objcinstance {
         ///Safely casts the object to an `Option<NonNullImmutable>`.  Suitable for implementing nullable functions.
         fn nullable(ptr: *const Self)
         -> Option<NonNullImmutable<Self>>;
-        ///Allows you to call [objr::bindings::PerformsSelector::perform] from a nonmutating context.
-        ///
-        /// This function should not be used for general-purpose pointer casting.
-        ///
-        /// # Safety
-        /// This is only safe when the underlying objc method does not mutate its contents.  See [objc_instance#Mutability] for details.
+        /// [objr::bindings::PerformsSelector::perform]
         unsafe fn assume_nonmut_perform(&self)
         -> *mut Self;
     }
