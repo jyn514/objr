@@ -3908,10 +3908,6 @@ pub mod bindings {
     pub use crate::objc_subclass;
     pub use crate::objc_instance_newtype;
     pub use crate::objc_class_newtype;
-    pub use procmacro::{__objc_implement_class, ObjcInstance, __static_expr,
-                        __static_extern, __static_asciiz_ident_as_selector,
-                        __static_asciiz_ident_as_type_encoding, __count,
-                        __concat_idents, __static_asciiz, __static_expr3};
     pub use super::class::AnyClass;
     pub use super::arguments::{Primitive, Arguable};
     pub use super::exception::{try_unwrap_void};
@@ -3919,9 +3915,6 @@ pub mod bindings {
     ///Used by macros, not public API
     #[doc(hidden)]
     pub use super::sel::_SyncWrapper;
-    #[doc(hidden)]
-    pub use procmacro::{_objc_selector_decl, _objc_selector_impl, __use,
-                        __mod};
 }
 mod private {
     ///"Sealed trait" pattern.  Traits will inherit from this trait to indicate they cannot be implemented outside the crate.

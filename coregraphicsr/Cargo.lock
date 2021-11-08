@@ -12,10 +12,3 @@ dependencies = [
 [[package]]
 name = "objr"
 version = "0.2.0"
-dependencies = [
- "procmacro",
-]
-
-[[package]]
-name = "procmacro"
-version = "0.1.0"
