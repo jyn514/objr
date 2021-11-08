@@ -88,6 +88,7 @@ pub trait PerformsSelector  {
     unsafe fn perform_result_autorelease_to_retain<A: Arguments, R: ObjcInstance>(receiver: *mut Self, selector: Sel, pool: &ActiveAutoreleasePool, args: A) -> Result<*const R, AutoreleasedCell<'_, NSError>>;
 }
 
+/* */
 ///implementation detail of perform_autorelease_to_strong_nonnull
 /// written here to ensure tailcall optimization
 ///

@@ -3,12 +3,6 @@
 version = 3
 
 [[package]]
-name = "cc"
-version = "1.0.71"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79c2681d6594606957bbb8631c4b90a7fcaaa72cdb714743a437b156d6a7eedd"
-
-[[package]]
 name = "coregraphicsr"
 version = "0.1.0"
 dependencies = [
@@ -17,14 +11,11 @@ dependencies = [
 
 [[package]]
 name = "objr"
-version = "0.1.0"
-source = "git+https://github.com/drewcrawford/objr?branch=winbuild#fb540c20ee8341bcc9d1ae6bfed0a13b1702a674"
+version = "0.2.0"
 dependencies = [
- "cc",
  "procmacro",
 ]
 
 [[package]]
 name = "procmacro"
 version = "0.1.0"
-source = "git+https://github.com/drewcrawford/objr?branch=winbuild#fb540c20ee8341bcc9d1ae6bfed0a13b1702a674"
