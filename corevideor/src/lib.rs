@@ -1,1 +1,1 @@
-extern crate objr_upstream;
+extern crate objr;

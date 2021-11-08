@@ -6,12 +6,12 @@ version = 3
 name = "corevideor"
 version = "0.1.0"
 dependencies = [
- "objr 0.1.0",
- "objr 0.2.0",
+ "empty",
+ "objr",
 ]
 
 [[package]]
-name = "objr"
+name = "empty"
 version = "0.1.0"
 
 [[package]]
