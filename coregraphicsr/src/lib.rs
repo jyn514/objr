@@ -1,1 +1,1 @@
-use objr::bindings::PerformsSelector;
+extern crate objr;

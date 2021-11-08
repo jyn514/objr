@@ -411,8 +411,6 @@ For an elided 'best case' version, see `RefCell`.
     }
 }
 mod nsobject {
-    //! Bindings for NSObject
-    //!
     use objr::bindings::{ActiveAutoreleasePool, Sel};
     use super::nsstring::NSString;
     use super::objcinstance::ObjcInstance;
@@ -600,8 +598,6 @@ mod nsobject {
     }
 }
 mod nsstring {
-    //! Provides NSString
-    //!
     use super::bindings::*;
     use std::ffi::{CStr};
     use std::hash::{Hash, Hasher};
@@ -732,7 +728,6 @@ mod nsstring {
     }
 }
 mod autorelease {
-    //! Autorelease pools and similar
     use core::ffi::{c_void};
     use core::marker::PhantomData;
     use std::ops::Deref;
@@ -2360,7 +2355,6 @@ mod sel {
     }
 }
 mod nserror {
-    //! NSError implementation
     use super::bindings::*;
     mod no_constructNSError {
         #[repr(transparent)]
