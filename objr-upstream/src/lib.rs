@@ -54,19 +54,15 @@ mod class {
             loop { }
         }
     }
-    ///Classes can use performSelector
     unsafe impl <T: ObjcClass> PerformablePointer for Class<T> { }
     impl <T: ObjcClass> PartialEq for Class<T> {
         fn eq(&self, other: &Self) -> bool { loop { } }
     }
     impl <T: ObjcClass> Class<T> {
         pub unsafe fn from_str(cstr: &CStr) -> &'static Self { loop { } }
-        ///Converts to an anyclass
         pub fn as_anyclass(&self) -> &'static AnyClass { loop { } }
     }
     impl <T: ObjcClass> Class<T> {
-        ///`[[Class alloc] init]`
-        ///
         pub fn alloc_init(&self, pool: &ActiveAutoreleasePool)
          -> StrongCell<T> {
             loop { }
@@ -74,7 +70,6 @@ mod class {
         pub unsafe fn alloc(&self, pool: &ActiveAutoreleasePool) -> *mut T {
             loop { }
         }
-        ///See [ObjcInstanceBehavior::assume_nonmut_perform()]
         pub unsafe fn assume_nonmut_perform(&self) -> *mut Self { loop { } }
     }
     impl <T: ObjcClass> std::fmt::Display for Class<T> {
@@ -138,7 +133,6 @@ See documentation for particular cells.
         fn objc_autoreleaseReturnValue(object: *const c_void)
         -> *const c_void;
     }
-    ///Turning this on may help debug retain/release
     const DEBUG_MEMORY: bool = false;
     #[link(name = "objc", kind = "dylib")]
     extern "C" {
@@ -154,7 +148,6 @@ The pool is used to lexically scope the lifetime of the pointer.
 */
     pub struct AutoreleasedCell<'a, T> {
         ptr: NonNullImmutable<T>,
-        ///for lifetime
         marker: PhantomData<&'a T>,
     }
     #[automatically_derived]
@@ -166,26 +159,15 @@ The pool is used to lexically scope the lifetime of the pointer.
         }
     }
     impl <'a, T: ObjcInstance> AutoreleasedCell<'a, T> {
-        ///Converts to [Self] by autoreleasing the reference.
         pub fn autoreleasing(cell: &T, _pool: &'a ActiveAutoreleasePool)
          -> Self {
             loop { }
         }
-        ///Converts to [Self] by assuming the pointer is already autoreleased.
-        ///
-        /// This is the case for many objc methods, depending on convention.
         pub unsafe fn assume_autoreleased(ptr: &T,
                                           _pool: &'a ActiveAutoreleasePool)
          -> Self {
             loop { }
         }
-        ///Converts to a mutable version.
-        /// 
-        /// # Safety
-        /// You are responsible to check:
-        /// * There are no other references to the type, mutable or otherwise
-        /// * The type is in fact "mutable", whatever that means.  Specifically, to whatever extent `&mut` functions are forbidden
-        ///   generally, you must ensure it is appropriate to call them here.
         pub unsafe fn assume_mut(self) -> AutoreleasedMutCell<'a, T> {
             loop { }
         }
@@ -216,7 +198,6 @@ The pool is used to lexically scope the lifetime of the pointer.
  */
     pub struct AutoreleasedMutCell<'a, T> {
         ptr: NonNull<T>,
-        ///for lifetime
         marker: PhantomData<&'a T>,
     }
     #[automatically_derived]
@@ -228,14 +209,10 @@ The pool is used to lexically scope the lifetime of the pointer.
         }
     }
     impl <'a, T: ObjcInstance> AutoreleasedMutCell<'a, T> {
-        ///Converts to [Self] by autoreleasing the reference.
         pub fn autoreleasing(cell: &mut T, _pool: &'a ActiveAutoreleasePool)
          -> Self {
             loop { }
         }
-        ///Converts to [Self] by assuming the pointer is already autoreleased.
-        ///
-        /// This is the case for many objc methods, depending on convention.
         pub unsafe fn assume_autoreleased(ptr: &mut T,
                                           _pool: &'a ActiveAutoreleasePool)
          -> Self {
@@ -305,37 +282,12 @@ For an elided 'best case' version, see `RefCell`.
     }
     impl <T: ObjcInstance> StrongCell<T> {
         pub fn retaining(cell: &T) -> Self { loop { } }
-        ///Converts to [AutoreleasedCell] by calling `autorelease` on `self`.
-        ///
-        ///Safe, but needs to be a moving function, because the StrongCell will not be valid once we
-        /// decrement its reference counter.
         pub fn autoreleasing<'a>(cell: &Self, pool: &'a ActiveAutoreleasePool)
          -> AutoreleasedCell<'a, T> {
             loop { }
         }
-        ///Converts to [Self] by assuming the argument is already retained.
-        ///
-        /// This is usually the case for some objc methods with names like `new`, `copy`, `init`, etc.
-        /// # Safety
-        /// You are responsible to check:
-        /// * That the type is retained
-        /// * That the type is 'static, that is, it has no references to external (Rust) memory.
-        ///   If this is not the case, see [StrongLifetimeCell].
         pub unsafe fn assume_retained(reference: &T) -> Self { loop { } }
-        ///Converts to a mutable version.
-        ///
-        /// # Safety
-        /// You are responsible to check:
-        /// * There are no other references to the type, mutable or otherwise
-        /// * The type is in fact "mutable", whatever that means.  Specifically, to whatever extent `&mut` functions are forbidden
-        ///   generally, you must ensure it is appropriate to call them here.
         pub unsafe fn assume_mut(self) -> StrongMutCell<T> { loop { } }
-        ///Attempts to use the "trampoline" trick to return an autoreleased value to objc.
-        ///
-        /// This is largely used when implementing a subclass.
-        ///
-        ///You must return the return value of this function, to your caller to get optimized results.
-        /// Results are not guaranteed to be optimized, in part because inline assembly is not stabilized.
         #[inline(always)]
         pub fn return_autoreleased(self) -> *const T { loop { } }
     }
@@ -365,9 +317,6 @@ For an elided 'best case' version, see `RefCell`.
     }
     unsafe impl <T: ObjcInstance> Send for StrongCell<T> { }
     unsafe impl <T: ObjcInstance + Sync> Sync for StrongCell<T> { }
-    ///Like StrongCell, but restricted to a particular lifetime.
-    ///
-    /// This is typically used for objects that borrow some Rust data
     pub struct StrongLifetimeCell<'a,
                                   T: ObjcInstance>(NonNullImmutable<T>,
                                                    PhantomData<&'a ()>);
@@ -381,25 +330,11 @@ For an elided 'best case' version, see `RefCell`.
     }
     impl <'a, T: ObjcInstance> StrongLifetimeCell<'a, T> {
         pub fn retaining(cell: &'a T) -> Self { loop { } }
-        ///Converts to [AutoreleasedCell] by calling `autorelease` on `self`.
-        ///
-        ///Safe, but needs to be a moving function, because the StrongCell will not be valid once we
-        /// decrement its reference counter.
         pub fn autoreleasing<'b: 'a>(cell: &'a Self,
                                      pool: &'b ActiveAutoreleasePool)
          -> AutoreleasedCell<'b, T> {
             loop { }
         }
-        ///Converts to [Self] by assuming the argument is already retained.
-        ///
-        /// This is usually the case for some objc methods with names like `new`, `copy`, `init`, etc.
-        /// # Safety
-        /// You are repsonsible to check:
-        /// * That the type is retained
-        /// * That the type can remain valid for the lifetime specified.  e.g., all "inner pointers" or "borrowed data" involved
-        /// in this object will remain valid for the lifetime specified, which is unbounded.
-        /// * That all objc APIs which end up seeing this pointer will either only access it for the lifetime specified,
-        ///   or will take some other step (usually, copying) the object into a longer lifetime.
         pub unsafe fn assume_retained_limited(reference: &'a T) -> Self {
             loop { }
         }
@@ -426,7 +361,6 @@ For an elided 'best case' version, see `RefCell`.
     impl <'a, T: Hash + ObjcInstance> Hash for StrongLifetimeCell<'a, T> {
         fn hash<H: Hasher>(&self, state: &mut H) { loop { } }
     }
-    ///[StrongCell], but mutable
     pub struct StrongMutCell<T: ObjcInstance>(NonNull<T>);
     #[automatically_derived]
     #[allow(unused_qualifications)]
@@ -438,37 +372,17 @@ For an elided 'best case' version, see `RefCell`.
     }
     impl <T: ObjcInstance> StrongMutCell<T> {
         pub fn retaining(cell: &mut T) -> Self { loop { } }
-        ///Converts to [AutoreleasedCell] by calling `autorelease` on `self`.
-        ///
-        ///Safe, but needs to be a moving function, because the StrongCell will not be valid once we
-        /// decrement its reference counter.
         pub fn autoreleasing<'a>(cell: &mut Self,
                                  pool: &'a ActiveAutoreleasePool)
          -> AutoreleasedMutCell<'a, T> {
             loop { }
         }
-        ///Converts to [StrongCell], e.g. dropping the mutable portion.
-        ///
-        /// This consumes the cell, e.g. you can't have an exclusive and nonexclusive reference to the same object.
         pub fn as_const(self) -> StrongCell<T> { loop { } }
     }
     impl <T: ObjcInstance> StrongMutCell<T> {
-        ///Converts to [Self] by assuming the argument is already retained.
-        ///
-        /// This is usually the case for some objc methods with names like `new`, `copy`, `init`, etc.
-        /// # Safety
-        /// If this isn't actually retained, will UB
         pub unsafe fn assume_retained(reference: &mut T) -> Self { loop { } }
-        ///Attempts to use the "trampoline" trick to return an autoreleased value to objc.
-        ///
-        /// This is largely used when implementing a subclass.
-        ///
-        /// You must return the return value of this function, to your caller to get optimized results.
-        /// Results are not guaranteed to be optimized, in part because inline assembly is not stabilized.
-        #[inline(always)]
         pub fn return_autoreleased(self) -> *mut T { loop { } }
     }
-    ///we send in objc all the time
     unsafe impl <T: ObjcInstance> Send for StrongMutCell<T> { }
     impl <T: ObjcInstance> Drop for StrongMutCell<T> {
         fn drop(&mut self) { loop { } }
@@ -616,9 +530,6 @@ mod nsobject {
             loop { }
         }
     }
-    ///Trait for NSObject.  This will be autoimplemented by all [ObjcInstance].
-    ///
-    /// This type provides bindings to common `NSObject` functions.
     pub trait NSObjectTrait: Sized + ObjcInstance {
         fn description<'a>(&self, pool: &ActiveAutoreleasePool)
         -> StrongCell<NSString>;
@@ -626,10 +537,8 @@ mod nsobject {
         -> bool;
         fn copy(&self, pool: &ActiveAutoreleasePool)
         -> StrongCell<Self>;
-        ///Calls `[instance init]`.;
         unsafe fn init(receiver: *mut *mut Self,
                        pool: &ActiveAutoreleasePool);
-        ///erases type to NSObject
         fn as_nsobject(&self)
         -> &NSObject;
     }
@@ -645,10 +554,6 @@ mod nsobject {
         fn copy(&self, pool: &ActiveAutoreleasePool) -> StrongCell<Self> {
             loop { }
         }
-        ///Initializes the object by calling `[self init]`
-        ///
-        ///By objc convention, `init` may return a distinct pointer than the one that's passed in.
-        /// For this reason, a mutable reference is required.
         unsafe fn init(receiver: *mut *mut Self,
                        pool: &ActiveAutoreleasePool) {
             loop { }
@@ -817,11 +722,9 @@ mod nsstring {
         fn hash<H: Hasher>(&self, state: &mut H) { loop { } }
     }
     impl NSString {
-        ///Converts to a stringslice
         pub fn to_str(&self, pool: &ActiveAutoreleasePool) -> &str {
             loop { }
         }
-        ///Copies the string into foundation storage
         pub fn with_str_copy(str: &str, pool: &ActiveAutoreleasePool)
          -> StrongCell<NSString> {
             loop { }
@@ -838,21 +741,7 @@ mod autorelease {
         -> *const c_void;
         pub fn objc_autoreleasePoolPop(ptr: *const c_void);
     }
-    ///Marker type that indicates you have an active autorelease pool.
-    ///
-    /// This type is generally appropriate for passing around as an argument.  In practice, it is zero-sized,
-    /// so it should be the zero-cost abstraction.
-    ///
-    /// Generally, you work with borrows of this type.  The lifetime of the borrow
-    /// is the lifetime that the autoreleasepool is statically guaranteed to be active.  This lets
-    /// you check autorelease behavior statically.
-    ///
-    /// There are two ways to construct this type:
-    /// 1.  by dereferencing an [AutoreleasePool] (preferred)
-    ///2.   [ActiveAutoreleasePool::assume_autoreleasepool()].
     pub struct ActiveAutoreleasePool {
-        ///don't allow anyone else to construct this
-        /// !Send !Sync
         _marker: PhantomData<*const ()>,
     }
     #[automatically_derived]
@@ -863,25 +752,11 @@ mod autorelease {
         }
     }
     impl ActiveAutoreleasePool {
-        ///This function makes the [ActiveAutoreleasePool] marker type guaranteeing we have an autoreleasepool
-        /// active on the thread.
-        ///
-        /// # Safety
-        /// This is generally unsafe, but if you are certain an autoreleasepool is active on the thread,
-        /// you can use this constructor to create your own marker tpe.
         pub const unsafe fn assume_autoreleasepool()
          -> ActiveAutoreleasePool {
             ActiveAutoreleasePool{_marker: PhantomData,}
         }
     }
-    ///Tracks an active autoreleasepool.
-    ///
-    /// This is generally used at the "top level" to create a new pool, for a
-    /// type to use as an argument instead, see [ActiveAutoreleasePool].
-    ///
-    /// This type can be dereferenced into [ActiveAutoreleasePool].
-    ///
-    /// Pops the pool on drop.
     pub struct AutoreleasePool {
         ptr: *const c_void,
         pool: ActiveAutoreleasePool,
@@ -897,7 +772,6 @@ mod autorelease {
         type Target = ActiveAutoreleasePool;
         fn deref(&self) -> &Self::Target { loop { } }
     }
-    ///Pops the pool
     impl Drop for AutoreleasePool {
         fn drop(&mut self) { loop { } }
     }
@@ -906,18 +780,10 @@ mod autorelease {
         loop { }
     }
     impl AutoreleasePool {
-        ///Creates a new pool.  The pool will be dropped when this type is dropped.
-        ///
-        /// # Safety
-        /// Autorelease pools must be dropped in reverse order to when they are created. If you don't want to maintain
-        /// this invariant yourself, see the [autoreleasepool] safe wrapper.
         pub unsafe fn new() -> Self { loop { } }
     }
 }
 mod arguments {
-    ///!Rust doesn't natively support varargs, so encoding the args
-    ///!into an "anonymous" type that implements this trait is a convenient
-    ///! way to pass the objcargs to functions.
     use super::bindings::*;
     use std::ffi::c_void;
     use std::fmt::Debug;
@@ -931,18 +797,12 @@ mod arguments {
         receiver: *mut c_void,
         class: *const AnyClass,
     }
-    ///Trait describing a type that can be used as arugments.  Generally, this is a tuple of all the arguments to some method.
-    ///
-    /// This type is sealed; you may not implement it from outside the crate.
-    /// All implementations are provided via macro.
     pub trait Arguments: Sized + Debug + crate::private::Sealed {
-        ///Implementation deatil of [PerformsSelector::perform_primitive]
         unsafe fn invoke_primitive<R: Primitive>(receiver: *mut c_void,
                                                  sel: Sel,
                                                  pool: &ActiveAutoreleasePool,
                                                  args: Self)
         -> R;
-        ///Implementation detail of [PerformsSelectorSuper::perform_super_primitive]
         unsafe fn invoke_primitive_super<R: Primitive>(obj: *mut c_void,
                                                        sel: Sel,
                                                        _pool:
@@ -950,19 +810,16 @@ mod arguments {
                                                        class: *const AnyClass,
                                                        args: Self)
         -> R;
-        ///Implementation detail of [PerformsSelector::perform]
         unsafe fn invoke<R: ObjcInstance>(receiver: *mut c_void, sel: Sel,
                                           pool: &ActiveAutoreleasePool,
                                           args: Self)
         -> *const R;
-        ///Implementation detail of [PerformsSelectorSuper::perform_super]
         unsafe fn invoke_super<R: ObjcInstance>(receiver: *mut c_void,
                                                 sel: Sel,
                                                 pool: &ActiveAutoreleasePool,
                                                 class: *const AnyClass,
                                                 args: Self)
         -> *const R;
-        ///Implementation detail of [PerformsSelector::perform_result]
         unsafe fn invoke_error<'a,
                                R: ObjcInstance>(receiver: *mut c_void,
                                                 sel: Sel,
@@ -970,7 +827,6 @@ mod arguments {
                                                     &'a ActiveAutoreleasePool,
                                                 args: Self)
         -> Result<*const R, AutoreleasedCell<'a, NSError>>;
-        ///Implementation detail of [PerformablePointer::perform_result_autorelease_to_retain]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -979,7 +835,6 @@ mod arguments {
                                                                       &'a ActiveAutoreleasePool,
                                                                   args: Self)
         -> Result<*const R, AutoreleasedCell<'a, NSError>>;
-        ///Implementation detail of [PerformsSelectorSuper::perform_super_result_autorelease_to_retain]
         unsafe fn invoke_error_trampoline_strong_super<'a,
                                                        R: ObjcInstance>(obj:
                                                                             *mut c_void,
@@ -992,7 +847,6 @@ mod arguments {
                                                                         args:
                                                                             Self)
         -> Result<*const R, AutoreleasedCell<'a, NSError>>;
-        ///Implementation detail of [PerformsSelectorSuper::perform_super_autorelease_to_retain]
         unsafe fn invoke_error_trampoline_super<'a,
                                                 R: ObjcInstance>(receiver:
                                                                      *mut c_void,
@@ -1004,31 +858,9 @@ mod arguments {
                                                                  args: Self)
         -> Result<*const R, AutoreleasedCell<'a, NSError>>;
     }
-    ///Can be used as an argument in objr
-    ///
-    /// This constraint provides additional safety around transmuting fp types.
-    ///
-    /// # Safety
-    /// The primary constraint of this protocol is it needs to be FFI-safe (`#[repr(transparent)]` or `#[repr(C)]`).
-    /// Since this cannot be otherwise verified, we're going to declare it `unsafe`.
-    /// # See also
-    /// [Primitive], which implies this trait. The difference is that [Arguable] does not allow the [PerformsSelector::perform_primitive()]
-    /// family in its return type.
     pub unsafe trait Arguable { }
     unsafe impl <O: ObjcInstance> Arguable for &O { }
     unsafe impl <O: ObjcInstance> Arguable for *const O { }
-    ///Non-reference types that are ObjC FFI-safe.  This marker
-    /// allows access to the [PerformsSelector::perform_primitive()] family.
-    ///
-    /// # Safety
-    /// Type must be FFI-safe.
-    ///
-    /// # Note
-    /// This is unsealed because we want to allow structs to be declared as primitives in external crates.
-    ///
-    /// # See also
-    /// [Arguable], which is implied by this trait.  The difference is that [Primitive] allows [PerformsSelector::perform_primitive()]
-    /// family in its return type.
     pub unsafe trait Primitive: Arguable { }
     unsafe impl Primitive for Sel { }
     unsafe impl Arguable for Sel { }
@@ -1066,7 +898,6 @@ mod arguments {
     unsafe impl Primitive for i16 { }
     unsafe impl Arguable for i8 { }
     unsafe impl Primitive for i8 { }
-    ///Implementation macro for declaring [Argument] types.
     macro_rules! arguments_impl {
         ($($identifier : ident : $type : ident), *) =>
         (impl < $($type : Arguable), * > crate :: objr :: private :: Sealed
@@ -1112,13 +943,6 @@ mod arguments {
                  :: mem :: transmute(impcast) ; let ptr =
                  imp(& objc_super, sel $(, $identifier) *) ; ptr as * const R
              }
-             ///This function combines various common behaviors in a fast implementation.
-             /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-             ///
-             /// 1.  Invoke / performSelector
-             /// 2.  Assumes trailing error parameter
-             /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-             ///
              #[inline] unsafe fn invoke_error_trampoline_strong < 'a, R :
              ObjcInstance >
              (obj : * mut c_void, sel : Sel, pool : & 'a
@@ -1230,13 +1054,6 @@ mod arguments {
                                                 (): Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
         #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
@@ -1319,14 +1136,6 @@ mod arguments {
                                                 (a,): Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -1410,14 +1219,6 @@ mod arguments {
                                                 (a, b): Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -1503,13 +1304,6 @@ mod arguments {
                                                 (a, b, c): Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
         #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
@@ -1600,14 +1394,6 @@ mod arguments {
          -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -1699,13 +1485,6 @@ mod arguments {
          -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
         #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
@@ -1800,14 +1579,6 @@ mod arguments {
          -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -1904,14 +1675,6 @@ mod arguments {
          -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -2010,14 +1773,6 @@ mod arguments {
                                                     Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -2119,14 +1874,6 @@ mod arguments {
                                                     Self) -> *const R {
             loop { }
         }
-        ///This function combines various common behaviors in a fast implementation.
-        /// In particular I want to make sure we generate the right machinecode for `objc_retainAutoreleasedReturnValue`
-        ///
-        /// 1.  Invoke / performSelector
-        /// 2.  Assumes trailing error parameter
-        /// 3.  Caller wants +1 / StrongCell, but callee returns +0 / autoreleased.  Resolved via the magic trampoline `objc_retainAutoreleasedReturnValue`.
-        ///
-        #[inline]
         unsafe fn invoke_error_trampoline_strong<'a,
                                                  R: ObjcInstance>(obj:
                                                                       *mut c_void,
@@ -2196,23 +1943,8 @@ mod performselector {
     use super::autorelease::ActiveAutoreleasePool;
     use crate::bindings::{NSError, ObjcClass};
     use crate::class::AnyClass;
-    ///Types that can be performedSelector.
-    ///
-    /// # Stability
-    /// Do not implement this type directly.  Instead use [objc_instance!] or [objc_class!].
-    ///
-    /// # Safety
-    /// This requires the underlying type to be FFI-safe and a valid ObjC pointer.
-    ///
     pub unsafe trait PerformablePointer { }
     unsafe impl <O: ObjcInstance> PerformablePointer for O { }
-    ///Trait where we can also call methods on super.  This requires knowing a superclass.
-    /// # Stability
-    /// Do not implement this type directly.  Instead use [objc_instance!] or [objc_class!].
-    ///
-    /// # Safety
-    /// This requires the underlying type to be FFI-safe and a valid Objc pointer.
-    ///
     pub unsafe trait PerformableSuper: PerformablePointer {
         fn any_class()
         -> &'static AnyClass;
@@ -2334,12 +2066,7 @@ mod performselector {
             loop { }
         }
     }
-    ///Variants of the perform functions that talk to `super` instead of `self`.  In general, this is supported on classes.
     pub trait PerformsSelectorSuper {
-        ///Performs selector, returning a primitive type.
-        ///
-        /// # Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_super_primitive<A: Arguments,
                                           R: Primitive>(receiver: *mut Self,
                                                         selector: Sel,
@@ -2347,23 +2074,12 @@ mod performselector {
                                                             &ActiveAutoreleasePool,
                                                         args: A)
         -> R;
-        ///Performs, returning the specified [ObjcInstance].  You must coerce this into some type according to your knowledge of ObjC convention.
-        ///
-        /// # Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_super<A: Arguments,
                                 R: ObjcInstance>(receiver: *mut Self,
                                                  selector: Sel,
                                                  pool: &ActiveAutoreleasePool,
                                                  args: A)
         -> *const R;
-        ///Performs, returning the result of the specified [ObjcInstance].  You must coerce this into some type according to your knowledge of ObjC convention.
-        ///
-        /// By convention, the error value is an autoreleased [NSError].
-        ///
-        ///
-        /// # Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_super_result<A: Arguments,
                                        R: ObjcInstance>(receiver: *mut Self,
                                                         selector: Sel,
@@ -2371,14 +2087,6 @@ mod performselector {
                                                             &ActiveAutoreleasePool,
                                                         args: A)
         -> Result<*const R, AutoreleasedCell<'_, NSError>>;
-        ///Performs, returning the specified [ObjcInstance].
-        ///
-        /// This variant assumes 1) the calling convention is +0, 2) the type returned to you is +1.  The implementation
-        /// knows a trick to perform this conversion faster than you can do it manually.
-        ///
-        ///
-        /// # Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_super_autorelease_to_retain<A: Arguments,
                                                       R: ObjcInstance>(receiver:
                                                                            *mut Self,
@@ -2456,16 +2164,7 @@ mod objcinstance {
     use crate::bindings::{StrongCell, AutoreleasedCell, StrongLifetimeCell,
                           StrongMutCell};
     use crate::autorelease::ActiveAutoreleasePool;
-    ///Marks that a given type is an objc type, e.g. its instances are an objc object.
-    ///This is the case for classes, but also for protocols.
-    ///
-    /// # Stability
-    /// It is not stable API to implement this trait yourself.  Instead, declare a conforming
-    /// type via [objc_instance!] macro.
-    ///
     pub trait ObjcInstance { }
-    ///A nonnull, but immutable type.  This allows various optimizations like pointer-packing `Option<T>`.
-    ///
     #[repr(transparent)]
     pub struct NonNullImmutable<T: ?Sized>(NonNull<T>);
     #[automatically_derived]
@@ -2478,95 +2177,28 @@ mod objcinstance {
     }
     impl <T: ObjcInstance> NonNullImmutable<T> {
         pub(crate) fn from_reference(ptr: &T) -> Self { loop { } }
-        ///Assumes the object has been retained and converts to a StrongCell.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Object was retained (+1)
-        /// * Object is not deallocated
-        /// * Object was initialized
-        /// * Object is 'static, that is, it has no references to external (Rust) memory.
-        /// If this is not the case, see [NonNullImmutable::assume_retained_limited].
         pub unsafe fn assume_retained(self) -> StrongCell<T> { loop { } }
-        ///Assumes the object has been retained and converts to a StrongLifetimeCell.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Object was retained (+1)
-        /// * Object is not deallocated
-        /// * Object was initialized
-        /// * That the object can remain valid for the lifetime specified.  e.g., all "inner pointers" or "borrowed data" involved
-        /// in this object will remain valid for the lifetime specified, which is unbounded.
-        /// * That all objc APIs which end up seeing this instance will either only access it for the lifetime specified,
-        ///   or will take some other step (usually, copying) the object into a longer lifetime.
         pub unsafe fn assume_retained_limited<'a>(self)
          -> StrongLifetimeCell<'a, T> where T: 'a {
             loop { }
         }
-        ///Assumes the object has been autoreleased and converts to an AutoreleasedCell.
-        ///
-        /// # Safety:
-        /// You must guarantee each of the following:
-        /// * Object is autoreleased already
-        /// * Object is not deallocated
-        /// * Object was initialized
         pub unsafe fn assume_autoreleased<'a>(self,
                                               pool: &'a ActiveAutoreleasePool)
          -> AutoreleasedCell<'a, T> {
             loop { }
         }
-        ///Converts to a raw pointer
         pub(crate) fn as_ptr(&self) -> *const T { loop { } }
-        ///Assumes the passed pointer is non-nil.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Pointer is non-nil
-        /// * Points to a valid objc object of the type specified
         pub(crate) unsafe fn assume_nonnil(ptr: *const T) -> Self { loop { } }
-        ///Dereferences the inner pointer.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following
-        /// * Object is not deallocated
-        /// * Object will not be deallocated for the lifetime of `self` (e.g., the lifetime of the returned reference)
-        /// * Object was initialized
         unsafe fn as_ref(&self) -> &T { loop { } }
-        ///Retains the inner pointer and converts to [StrongCell]
-        ///
-        /// # Safety
-        /// You must guarantee each of the following
-        /// * Object is not deallocated
-        /// * object was initialized
         pub unsafe fn retain(&self) -> StrongCell<T> { loop { } }
     }
-    ///Behavior we define for any [ObjcInstance].
     pub trait ObjcInstanceBehavior {
-        ///Casts the type to another type.
-        ///
-        /// # Safety
-        /// There is no guarantee that the source type is compatible with the destination type.
         unsafe fn cast<R: ObjcInstance>(&self)
         -> &R;
-        ///Casts the type to another type.
-        ///
-        /// # Safety
-        /// There is no guarantee that the source type is compatible with the destination type.
-        /// To the extent that you create two pointers pointing to the same instance,
-        /// this may be UB
         unsafe fn cast_mut<R: ObjcInstance>(&mut self)
         -> &mut R;
-        ///Assuming the pointer is non-nil, returns a pointer type.
-        ///
-        /// The opposite of this function is [Self::nullable].
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Pointer is non-nil
-        /// * Points to a valid objc object of the type specified
         unsafe fn assume_nonnil(ptr: *const Self)
         -> NonNullImmutable<Self>;
-        ///Safely casts the object to an `Option<NonNullImmutable>`.  Suitable for implementing nullable functions.
         fn nullable(ptr: *const Self)
         -> Option<NonNullImmutable<Self>>;
         /// [objr::bindings::PerformsSelector::perform]
@@ -2584,47 +2216,15 @@ mod objcinstance {
         }
         unsafe fn assume_nonmut_perform(&self) -> *mut Self { loop { } }
     }
-    ///Helper for Option<NonNullable>
     pub trait NullableBehavior {
         type T: ObjcInstance;
-        ///Assumes the object has been autoreleased and converts to an Option<AutoreleasedCell>
-        ///
-        /// # Safety:
-        /// You must guarantee each of the following:
-        /// * Object (if any) is autoreleased already
-        /// * Object (if any) is not deallocated
-        /// * Object (if any) was initialized
         unsafe fn assume_autoreleased<'a>(self,
                                           pool: &'a ActiveAutoreleasePool)
         -> Option<AutoreleasedCell<'a, Self::T>>;
-        ///Assumes the object has been retained and converts to a StrongCell.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Object was retained (+1)
-        /// * Object (if any) is not deallocated
-        /// * Object (if any) was initialized
         unsafe fn assume_retained(self)
         -> Option<StrongCell<Self::T>>;
-        ///Retains the inner pointer and converts to [StrongCell]
-        ///
-        /// # Safety
-        /// You must guarantee each of the following
-        /// * Object (if any) is not deallocated
-        /// * object (if any) was initialized
         unsafe fn retain(self)
         -> Option<StrongCell<Self::T>>;
-        ///Assumes the object has been retained and converts to a StrongLifetimeCell.
-        ///
-        /// # Safety
-        /// You must guarantee each of the following:
-        /// * Object (if any) was retained (+1)
-        /// * Object (if any) is not deallocated
-        /// * Object (if any) was initialized
-        /// * That the object (if any) can remain valid for the lifetime specified.  e.g., all "inner pointers" or "borrowed data" involved
-        /// in this object will remain valid for the lifetime specified, which is unbounded.
-        /// * That all objc APIs which end up seeing this instance will either only access it for the lifetime specified,
-        ///   or will take some other step (usually, copying) the object into a longer lifetime.
         unsafe fn assume_retained_limited<'a>(self)
         -> Option<StrongLifetimeCell<'a, Self::T>>
         where
@@ -2646,16 +2246,8 @@ mod objcinstance {
             loop { }
         }
     }
-    ///Helper for Option<StrongCell>
     pub trait NullableCellBehavior {
         type T: ObjcInstance;
-        ///Converts to a mutable version.
-        ///
-        /// # Safety
-        /// You are responsible to check:
-        /// * There are no other references to the type, mutable or otherwise
-        /// * The type is in fact "mutable", whatever that means.  Specifically, to whatever extent `&mut` functions are forbidden
-        ///   generally, you must ensure it is appropriate to call them here.
         unsafe fn assume_mut(self)
         -> Option<StrongMutCell<Self::T>>;
     }
@@ -2707,9 +2299,7 @@ mod objcinstance {
             }
         }
     }
-    ///Defines some behavior on `Option<&ObjcInstance>`
     pub trait OptionalInstanceBehavior<Deref> {
-        ///Gets a pointer for the option.  If `self` is `nil`, the pointer will be `null`, otherwise it will be the underlying reference.
         fn as_ptr(&self)
         -> *const Deref;
     }
@@ -2748,15 +2338,10 @@ mod sel {
         }
     }
     impl Sel {
-        ///Dynamically creates `Sel` from a string by quering the ObjC runtime.  Note that in most cases, [objc_selector_group!()] is a faster method
-        /// to get selectors.
         pub fn from_str(string: &str) -> Self { loop { } }
         pub unsafe fn ptr(&self) -> *const c_void { loop { } }
         pub const fn from_ptr(ptr: *const c_void) -> Sel { Sel(ptr) }
     }
-    ///Primarily used by [objc_subclass!] and similar.
-    #[repr(transparent)]
-    #[doc(hidden)]
     pub struct _SyncWrapper<T>(pub T);
     unsafe impl <T> core::marker::Sync for _SyncWrapper<T> { }
     #[link_section = "__DATA,__objc_imageinfo,regular,no_dead_strip"]
@@ -2816,7 +2401,6 @@ mod nserror {
         }
     }
     pub trait ResultNSError<T> {
-        ///A friendlier unwrap for [NSError] that prints the error if you encounter it.
         fn unwrap_nserror(self, pool: &ActiveAutoreleasePool)
         -> T;
     }
@@ -2831,551 +2415,8 @@ mod nserror {
         }
     }
 }
-/*
-mod subclass {
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_sublcass_implpart_method_prelude {
-        ($MethodT : ident, $MethodListT : ident) =>
-        {
-            #[repr(C)] struct $MethodT
-            { name : * const u8, types : * const u8, imp : * const c_void }
-            #[repr(C)] struct $MethodListT < const SIZE : usize >
-            { magic : u32, count : u32, methods : [MethodT ; SIZE], }
-        }
-    }
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_implpart_a {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident, $IvarListT : ident, $ClassRoT : ident, $CLASS_NAME : ident,
-         $CLASS_FLAGS : ident, $METACLASS_FLAGS : ident, $CLASST : ident,
-         $NSSUPER_CLASS : ident, $OBJC_EMPTY_CACHE : ident) =>
-        {
-            use core :: ffi :: c_void ; #[repr(C)] struct $IvarListT
-            {
-                magic : u32, count : u32, offset : * const u32, name : * const
-                u8, r#type : * const u8, alignment : u32, size : u32
-            } #[repr(C)] struct $ClassRoT
-            {
-                flags : u32, instance_start : u32, instance_size : u32,
-                reserved : u32, ivar_layout : * const c_void, name : * const
-                u8, base_method_list : * const c_void, base_protocols : *
-                const c_void, ivars : * const IvarListT, weak_ivar_layout : *
-                const c_void, base_properties : * const c_void,
-            } objr :: bindings :: __static_asciiz!
-            ("__TEXT,__objc_classname,cstring_literals", $CLASS_NAME,
-             $objcname) ; const RO_FLAGS_METACLASS : u32 = 1 ; const
-            RO_FLAGS_HIDDEN : u32 = 1 << 4 ; const RO_FLAGS_ARR : u32 = 1 << 7
-            ; const $CLASS_FLAGS : u32 = RO_FLAGS_HIDDEN | RO_FLAGS_ARR ;
-            const METACLASS_FLAGS : u32 = RO_FLAGS_METACLASS | RO_FLAGS_HIDDEN
-            | RO_FLAGS_ARR ; objr :: bindings :: __static_expr!
-            ("__DATA,__objc_const", "_OBJC_METACLASS_RO_$_", $objcname, static
-             METACLASS_RO : objr :: bindings :: _SyncWrapper < $ClassRoT > =
-             objr :: bindings ::
-             _SyncWrapper(ClassRoT
-                          {
-                              flags : METACLASS_FLAGS, instance_start : 40,
-                              instance_size : 40, reserved : 0, ivar_layout :
-                              std :: ptr :: null(), name : & CLASS_NAME as *
-                              const u8, base_method_list : std :: ptr ::
-                              null(), base_protocols : std :: ptr :: null(),
-                              ivars : std :: ptr :: null(), weak_ivar_layout :
-                              std :: ptr :: null(), base_properties : std ::
-                              ptr :: null(),
-                          }) ;) ; #[repr(C)] pub struct $CLASST
-            {
-                isa : * const * const c_void, superclass : * const * const
-                c_void, cache : * const * const c_void, vtable : * const
-                c_void, ro : * const ClassRoT
-            } #[link(name = "CoreFoundation", kind = "framework")] extern
-            {
-                #[link_name = "OBJC_METACLASS_$_NSObject"] static
-                NSOBJECT_METACLASS : * const c_void ; objr :: bindings ::
-                __static_extern!
-                ("OBJC_CLASS_$_", $superclass, static $NSSUPER_CLASS : * const
-                 c_void ;) ; objr :: bindings :: __static_extern!
-                ("OBJC_METACLASS_$_", $superclass, static NSSUPER_METACLASS :
-                 * const c_void ;) ;
-            } #[link(name = "objc", kind = "dylib")] extern
-            {
-                #[link_name = "_objc_empty_cache"] static $OBJC_EMPTY_CACHE :
-                * const c_void ;
-            } objr :: bindings :: __static_expr!
-            ("__DATA,__objc_data", "OBJC_METACLASS_$_", $objcname, static
-             METACLASS : objr :: bindings :: _SyncWrapper < $CLASST > = objr
-             :: bindings ::
-             _SyncWrapper($CLASST
-                          {
-                              isa : unsafe { & NSOBJECT_METACLASS },
-                              superclass : unsafe { & NSSUPER_METACLASS },
-                              cache : unsafe { & OBJC_EMPTY_CACHE }, vtable :
-                              std :: ptr :: null(), ro : & METACLASS_RO.0
-                          }) ;) ;
-        }
-    }
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_implpart_class_ro {
-        ($objcname : ident, $CLASS_RO : ident, $ClassRoT : ident, $CLASS_FLAGS
-         : expr, $payload : ty, $CLASS_NAME : expr, $IVARLISTEXPR : expr,
-         $METHODLISTEXPR : expr) =>
-        {
-            objr :: bindings :: __static_expr!
-            ("__DATA,__objc_const", "_OBJC_CLASS_RO_$_", $objcname, static
-             $CLASS_RO : objr :: bindings :: _SyncWrapper < $ClassRoT > = objr
-             :: bindings ::
-             _SyncWrapper($ClassRoT
-                          {
-                              flags : $CLASS_FLAGS, instance_start : 8,
-                              instance_size : 8 + std :: mem :: size_of :: <
-                              $payload > () as u32, reserved : 0, ivar_layout
-                              : std :: ptr :: null(), name : & $CLASS_NAME as
-                              * const u8, base_method_list : $METHODLISTEXPR,
-                              base_protocols : std :: ptr :: null(), ivars :
-                              $IVARLISTEXPR, weak_ivar_layout : std :: ptr ::
-                              null(), base_properties : std :: ptr :: null(),
-                          }) ;) ;
-        }
-    }
-    ///Declares a method list
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_implpart_method_list {
-        ($objcname : ident, [$($objcmethod : literal, $methodfn : expr), +],
-         $METHOD_LIST : ident) =>
-        {
-            objr :: __objc_sublcass_implpart_method_prelude!
-            (MethodT, MethodListT) ;
-            $(objr :: bindings :: __static_asciiz_ident_as_selector!
-              ("__TEXT,__objc_methname,cstring_literals", "METHNAME_",
-               $methodfn, $objcmethod) ; objr :: bindings ::
-              __static_asciiz_ident_as_type_encoding!
-              ("__TEXT,__objc_methtype,cstring_literals", "METHTYPE_",
-               $methodfn, $objcmethod) ;) + const COUNT : usize = objr ::
-            bindings :: __count! ($($methodfn), *) ; objr :: bindings ::
-            __static_expr!
-            ("__DATA,__objc_const", "_OBJC_$_INSTANCE_METHODS_", $objcname,
-             static $METHOD_LIST : objr :: bindings :: _SyncWrapper <
-             MethodListT < COUNT >> = objr :: bindings ::
-             _SyncWrapper(MethodListT
-                          {
-                              magic : 24, count : COUNT as u32, methods :
-                              [$(MethodT
-                                 {
-                                     name : & objr :: bindings ::
-                                     __concat_idents! ("METHNAME_", $methodfn)
-                                     as * const u8, types : & objr :: bindings
-                                     :: __concat_idents!
-                                     ("METHTYPE_", $methodfn) as * const u8,
-                                     imp : $methodfn as * const c_void
-                                 }), *]
-                          }) ;) ;
-        }
-    }
-    ///Declares an ivarlist (e.g., payload variants)
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_implpart_ivar_list {
-        ($objcname : ident, $payloadtype : ty, $FRAGILE_BASE_CLASS_OFFSET :
-         ident, $IVAR_LIST : ident) =>
-        {
-            objr :: bindings :: __static_asciiz!
-            ("__TEXT,__objc_methname,cstring_literals", IVAR_NAME, "payload")
-            ; objr :: bindings :: __static_asciiz!
-            ("__TEXT,__objc_methtype,cstring_literals", IVAR_TYPE, "?") ; objr
-            :: bindings :: __static_expr3!
-            ("__DATA,__objc_ivar", "OBJC_IVAR_$_", $objcname, ".payload",
-             static $FRAGILE_BASE_CLASS_OFFSET : u32 = 8 ;) ; objr :: bindings
-            :: __static_expr!
-            ("__DATA,__objc_const", "_OBJC_INSTANCE_VARIABLES_", $objcname,
-             static $IVAR_LIST : objr :: bindings :: _SyncWrapper < IvarListT
-             > = objr :: bindings ::
-             _SyncWrapper(IvarListT
-                          {
-                              magic : 32, count : 1, offset : &
-                              FRAGILE_BASE_CLASS_OFFSET, name : & IVAR_NAME as
-                              * const u8, r#type : & IVAR_TYPE as * const u8,
-                              alignment : std :: mem :: align_of :: <
-                              $payloadtype > () as u32, size : std :: mem ::
-                              size_of :: < $payloadtype > () as u32,
-                          }) ;) ;
-        }
-    }
-    ///This macro implements some methods on the wrapper type
-    ///to access the underlying payload.
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_impl_payload_access {
-        ($pub : vis, $identifier : ident, $payload : ty,
-         $FRAGILE_BASE_CLASS_OFFSET : ident) =>
-        {
-            impl $identifier
-            {
-                /// Gets a mutable reference to the underlying payload.
-                ///
-                /// # Safety
-                /// You must guarantee you are called from an exclusive, mutable context.
-                ///
-                /// # Design
-                /// Similar to `UnsafeCell`, but
-                /// 1.  Difficult to initialize a cell here
-                /// 2.  I'm not sure if `UnsafeCell` is FFI-safe
-                /// 3.  In practice, you need to initialize the objc memory close to 100% of the time to avoid UB.
-                #[allow(dead_code)] $pub unsafe fn payload_mut(& self) -> &
-                mut $payload
-                {
-                    let self_addr = (self as * const _ as * const u8) ; let
-                    payload_addr =
-                    self_addr.offset(std :: ptr ::
-                                     read_volatile(&
-                                                   $FRAGILE_BASE_CLASS_OFFSET)
-                                     as isize) ; let payload_typed_addr = std
-                    :: mem :: transmute(payload_addr) ; payload_typed_addr
-                } #[allow(dead_code)] $pub fn payload(& self) -> & $payload
-                { unsafe { self.payload_mut() } }
-            }
-        }
-    }
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_implpart_finalize {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident, $CLASST : ident, $CLASS_RO : ident, $NSSUPER_CLASS : expr,
-         $OBJC_EMPTY_CACHE : expr) =>
-        {
-            objr :: bindings :: __static_expr!
-            ("__DATA,__objc_data", "OBJC_CLASS_$_", $objcname, pub static
-             CLASS : objr :: bindings :: _SyncWrapper < $CLASST > = objr ::
-             bindings ::
-             _SyncWrapper($CLASST
-                          {
-                              isa : unsafe
-                              { std :: mem :: transmute(& METACLASS) },
-                              superclass : unsafe { & $NSSUPER_CLASS }, cache
-                              : unsafe { & $OBJC_EMPTY_CACHE }, vtable : std
-                              :: ptr :: null(), ro : & $CLASS_RO.0
-                          }) ;) ; use objr :: bindings :: { objc_instance } ;
-            objc_instance! { pub struct $identifier ; } impl objr :: bindings
-            :: ObjcClass for $identifier
-            {
-                #[inline] fn class() -> & 'static :: objr :: bindings :: Class
-                < Self >
-                {
-                    unsafe
-                    {
-                        & *
-                        (& CLASS.0 as * const _ as * const :: objr :: bindings
-                         :: Class < Self >)
-                    }
-                }
-            }
-        }
-    }
-    ///Emits the subclass impl in the case have a payload
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_impl_with_payload_no_methods {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident, $payload : ty) =>
-        {
-            objr :: __objc_subclass_implpart_a!
-            ($pub, $identifier, $objcname, $superclass, IvarListT, ClassRoT,
-             CLASS_NAME, CLASS_FLAGS, METACLASS_FLAGS, CLASST, NSSUPER_CLASS,
-             OBJC_EMPTY_CACHE) ; objr :: __objc_subclass_implpart_ivar_list!
-            ($objcname, $payload, FRAGILE_BASE_CLASS_OFFSET, IVAR_LIST) ; objr
-            :: __objc_subclass_implpart_class_ro!
-            ($objcname, CLASS_RO, ClassRoT, CLASS_FLAGS, $payload, CLASS_NAME,
-             & IVAR_LIST.0, std :: ptr :: null()) ; objr ::
-            __objc_subclass_implpart_finalize!
-            ($pub, $identifier, $objcname, $superclass, CLASST, CLASS_RO,
-             NSSUPER_CLASS, OBJC_EMPTY_CACHE) ; objr ::
-            __objc_subclass_impl_payload_access!
-            ($pub, $identifier, $payload, FRAGILE_BASE_CLASS_OFFSET) ;
-        }
-    }
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_impl_no_payload_no_methods {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident) =>
-        {
-            objr :: __objc_subclass_implpart_a!
-            ($pub, $identifier, $objcname, $superclass, IvarListT, ClassRoT,
-             CLASS_NAME, CLASS_FLAGS, METACLASS_FLAGS, CLASST, NSSUPER_CLASS,
-             OBJC_EMPTY_CACHE) ; objr :: __objc_subclass_implpart_class_ro!
-            ($objcname, CLASS_RO, ClassRoT, CLASS_FLAGS, (), CLASS_NAME, std
-             :: ptr :: null(), std :: ptr :: null()) ; objr ::
-            __objc_subclass_implpart_finalize!
-            ($pub, $identifier, $objcname, $superclass, CLASST, CLASS_RO,
-             NSSUPER_CLASS, OBJC_EMPTY_CACHE) ;
-        }
-    }
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_impl_no_payload_with_methods {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident, [$($objcmethod : literal => $methodfn : expr $(,) *) +]) =>
-        {
-            objr :: __objc_subclass_implpart_a!
-            ($pub, $identifier, $objcname, $superclass, IvarListT, ClassRoT,
-             CLASS_NAME, CLASS_FLAGS, METACLASS_FLAGS, CLASST, NSSUPER_CLASS,
-             OBJC_EMPTY_CACHE) ; objr :: __objc_subclass_implpart_method_list!
-            ($objcname, [$($objcmethod, $methodfn), *], METHOD_LIST) ; objr ::
-            __objc_subclass_implpart_class_ro!
-            ($objcname, CLASS_RO, ClassRoT, CLASS_FLAGS, (), CLASS_NAME, std
-             :: ptr :: null(), unsafe
-             { std :: mem :: transmute(& METHOD_LIST.0) }) ; objr ::
-            __objc_subclass_implpart_finalize!
-            ($pub, $identifier, $objcname, $superclass, CLASST, CLASS_RO,
-             NSSUPER_CLASS, OBJC_EMPTY_CACHE) ;
-        }
-    }
-    ///Variant with payload and methods
-    #[macro_export]
-    #[doc(hidden)]
-    macro_rules! __objc_subclass_impl_with_payload_with_methods {
-        ($pub : vis, $identifier : ident, $objcname : ident, $superclass :
-         ident, $payload : ty,
-         [$($objcmethod : literal => $methodfn : expr $(,) *) +]) =>
-        {
-            objr :: __objc_subclass_implpart_a!
-            ($pub, $identifier, $objcname, $superclass, IvarListT, ClassRoT,
-             CLASS_NAME, CLASS_FLAGS, METACLASS_FLAGS, CLASST, NSSUPER_CLASS,
-             OBJC_EMPTY_CACHE) ; objr :: __objc_subclass_implpart_ivar_list!
-            ($objcname, $payload, FRAGILE_BASE_CLASS_OFFSET, IVAR_LIST) ; objr
-            :: __objc_subclass_implpart_method_list!
-            ($objcname, [$($objcmethod, $methodfn), *], METHOD_LIST) ; objr ::
-            __objc_subclass_implpart_class_ro!
-            ($objcname, CLASS_RO, ClassRoT, CLASS_FLAGS, $payload, CLASS_NAME,
-             unsafe { std :: mem :: transmute(& IVAR_LIST.0) }, unsafe
-             { std :: mem :: transmute(& METHOD_LIST.0) }) ; objr ::
-            __objc_subclass_implpart_finalize!
-            ($pub, $identifier, $objcname, $superclass, CLASST, CLASS_RO,
-             NSSUPER_CLASS, OBJC_EMPTY_CACHE) ; objr ::
-            __objc_subclass_impl_payload_access!
-            ($pub, $identifier, $payload, FRAGILE_BASE_CLASS_OFFSET) ;
-        }
-    }
-    ///Declares an objc subclass.
-    /// ```rust
-    /// use objr::objc_subclass;
-    /// objc_subclass! {
-    ///     //Declare a Rust type named `Example`, which maps to the underlying objc class
-    ///     pub struct Example {
-    ///         //In the ObjC runtime, our type will be named `Example`
-    ///         @class(Example)
-    ///         //And will have `NSNull` as its superclass
-    ///         @superclass(NSNull)
-    ///         //Do not allocate any ivar storage for the class
-    ///         payload: (),
-    ///         methods: []
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// # Methods
-    ///
-    /// To declare a method on the subclass, use a syntax like
-    /// ```ignore
-    /// methods = [
-    ///             "-(void) mySelector" => unsafe myRustFunction
-    /// ]
-    /// ```
-    ///
-    /// Where the left part is an ObjC declaration and the right part is a Rust function.  Couple of notes:
-    ///
-    /// 1.  Rust function must be `extern "C"`.  Failing to do this is UB.
-    /// 2.  The first two arguments to the Rust function are the pointer to Self, and the selector.
-    ///     (arguments that are repr-transparent to these are OK as well).
-    /// 3.  All arguments and return values must be FFI-safe.
-    ///
-    /// Here's a simple example
-    /// ```
-    /// use objr::bindings::*;
-    /// extern "C" fn example(objcSelf: Example, //repr-transparent to the pointer type
-    ///                     sel: Sel) {
-    ///     println!("Hello from rustdoc!");
-    /// }
-    /// objc_subclass! {
-    ///     pub struct Example {
-    ///         @class(Example)
-    ///         @superclass(NSObject)
-    ///         payload: (),
-    ///         methods: [ "-(void) example" => unsafe example ]
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// ## Returning values
-    ///
-    /// In general, if you're implementing a method of +1 (that is, retain/strong) convention, you need to return a retained value.
-    /// This means you must use [std::mem::forget] on a StrongCell.
-    ///
-    /// Alternatively, if you're implementing a method of +0 (that is, autorelease) convention, you need to return an autoreleased value.
-    /// While you can create an [objr::bindings::AutoreleasedCell] yourself, the best strategy is usually to return [objr::bindings::StrongCell::return_autoreleased()].
-    ///
-    /// ## Dealloc
-    ///
-    /// You can supply an implementation of dealloc in order to roll your own 'drop' behavior.
-    ///
-    /// Note that unlike "modern ARC" objc, you must chain to `[super dealloc]`.
-    ///
-    /// ### `.cxx_destruct`
-    ///
-    /// A real objc compiler uses a different strategy for the compiler generated deinitializer than `deinit`.  When
-    /// the you create an objc class with `id` (e.g., strong) payloads, the compiler synthesizes a `.cxx_destruct`
-    /// selector and uses special runtime flags to indicate this selector should be called.  This allows
-    /// compiler synthesis to co-exist with a user-written `deinit`.
-    ///
-    /// This is not currently supported by the macro but may be added in the future.
-    ///
-    /// ## Arguments
-    /// The first argument to your C function is a pointer to `self`, and the second argument is a selector-pointer.
-    /// You may use any memory-compatible types for these arguments in Rust.  For example, the self argument can be
-    /// * `*const c_void` or `*mut c_void`.
-    /// * `*const Example` or `*mut Example` (it's memory-compatible with the `*const c_void`).  Convenience functions are implemented
-    ///   on the wrapper type so this may be the useful one.  Keep in mind that it's up to you to not mutate from an immutable context.
-    ///   For more info, see [objc_instance!#safety]
-    ///
-    /// For the selector argument, typically you use `Sel`.  `*const c_void` and `*const c_char` are also allowed.
-    ///
-    /// # Payloads
-    /// Your ObjC type may have its own storage, inside the object.  This obviates the need
-    /// to allocate any external storage or somehow map between Rust and ObjC memory.
-    ///
-    /// Currently, a single field is supported.  However, this field can be a Rust struct.
-    /// Payloads may also be 0-sized, for example `()` may be used.
-    ///
-    /// To specify a payload, you use one of the following "payload specifiers"
-    ///
-    /// ## `()`
-    /// Indicates a zero-sized payload.
-    ///
-    /// Note that there is a subtle difference between using the tokens `()` and specifying a payload of 0-size (ex, `unsafe ininitialized nondrop ()`).
-    /// In the former case, we emit no payload to objc.  In the latter case, we emit storage of 0 size.  The `()` syntax is preferred.
-    ///
-    /// ## `unsafe uninitialized nondrop T`
-    ///
-    /// Storage for type T will be created.  This is
-    /// * uninitialized.  It is UB to read this before initialization.  Presumably, you need to write an objc `init` method and ensure it is called.
-    ///   If you somehow read this memory without initialization, this is UB.
-    /// * nondrop.  Drop will never be called on this type
-    /// * `unsafe`, no memory management is performed.
-    ///
-    ///
-    /// ```
-    /// use objr::bindings::*;
-    /// objc_subclass! {
-    ///     //Declare a Rust type named `Example`, which maps to the underlying objc class
-    ///     pub struct Example {
-    ///         //In the ObjC runtime, our type will be named `Example`
-    ///         @class(Example)
-    ///         //And will have `NSNull` as its superclass
-    ///         @superclass(NSNull)
-    ///         //The following storage will be allocated.  See the payload section.
-    ///         payload: unsafe uninitialized nondrop u8,
-    ///         methods: ["-(id) init" => unsafe init]
-    ///     }
-    /// }
-    ///
-    ///     extern "C" fn init(objcSelf: *mut Example, sel: Sel) -> *const Example {
-    ///         let new_self: &Example = unsafe{ &*(Example::perform_super(objcSelf,  Sel::init(), &ActiveAutoreleasePool::assume_autoreleasepool(), ()))};
-    ///         //initialize the payload to 5
-    ///         *(unsafe{new_self.payload_mut()}) = 5;
-    ///         //return self per objc convention
-    ///         new_self
-    ///     }
-    ///```
-    /// ### Payload memory management
-    /// One thing to keep in mind is that in general, memory management is significantly
-    /// different in ObjC and most Rust patterns simply do not work.
-    ///
-    /// Suppose you try to have a `struct Payload<'a> {&'a Type}` payload.  A few issues with this:
-    ///
-    /// 1.  Currently, Rust does not understand that `Payload` is inside `Example`.  Therefore,
-    ///     the borrowchecker does not check that `'a` is valid for the lifetime of `Example`.
-    ///
-    /// 2.  Even if this worked, in practice ObjC types are usually donated to the runtime
-    ///     either explicitly or implicitly.  The extent of this is not necessarily documented
-    ///     by ObjC people.  For example, in `https://lapcatsoftware.com/articles/working-without-a-nib-part-12.html`
-    ///     it's discussed that `NSWindow` effectively had its lifetime extended in an SDK
-    ///     release, with little in the way of documentation (in fact, I can only find discussion
-    ///     of it there).  In practice, this "just happens" in ObjC.
-    ///
-    ///     Therefore, your options are generally some combination of:
-    ///
-    ///     1.  Store `'static` data only
-    ///     2.  Use `StrongCell` for ObjC types.  This is simlar to what ObjC does internally anyway.
-    ///     3.  Use `Rc` or similar for Rust data.
-    ///     4.  I'm not gonna be the safety police and tell you not to use raw pointers,
-    ///         but you are on your own as far as the unbounded lifetimes of ObjC objects.
-    ///
-    /// Keep in mind that for several of these, you need to implement your own dealloc that calls drop.
-    ///
-    /// ### Coda on init
-    ///
-    /// The payload is born in an uninitialized state, which means any use of it is undefined.  Obviously,
-    /// you need to init it in some initializer.
-    ///
-    /// Less obviously, it is tricky to init it correctly.  For example, you assign to the payload, you may
-    /// drop the "prior" (uninitialized) value, which is UB.
-    ///
-    /// In theory, [std::mem::MaybeUninit] would solve this – assuming you remember to wrap all your values (or the payload itself).
-    /// In practice however, [std::mem::MaybeUnint.assume_init()] requires moving the value outside the payload,
-    /// which cannot really be done in this case.  See `https://github.com/rust-lang/rust/issues/63568` for details.
-    ///
-    /// The alternative is to write into your payload_mut with [std::ptr::write], which does not drop the uninitialized value.
-    ///
-    #[macro_export]
-    macro_rules! objc_subclass {
-        ($pub : vis struct $identifier : ident
-         {
-             @ class($objcname : ident) @ superclass($superclass : ident)
-             payload : unsafe uninitialized nondrop $payload : ty, methods :
-             []
-         }) =>
-        {
-            objr :: __objc_subclass_impl_with_payload_no_methods!
-            ($pub, $identifier, $objcname, $superclass, $payload) ;
-        } ;
-        ($pub : vis struct $identifier : ident
-         {
-             @ class($objcname : ident) @ superclass($superclass : ident)
-             payload : (), methods : []
-         }) =>
-        {
-            objr :: __objc_subclass_impl_no_payload_no_methods!
-            ($pub, $identifier, $objcname, $superclass) ;
-        } ;
-        ($pub : vis struct $identifier : ident
-         {
-             @ class($objcname : ident) @ superclass($superclass : ident)
-             payload : (), methods :
-             [$($objcmethod : literal => unsafe $methodfn : expr $(,) ?) +]
-         }) =>
-        {
-            objr :: __objc_subclass_impl_no_payload_with_methods!
-            ($pub, $identifier, $objcname, $superclass,
-             [$($objcmethod => $methodfn) *]) ;
-        } ;
-        ($pub : vis struct $identifier : ident
-         {
-             @ class($objcname : ident) @ superclass($superclass : ident)
-             payload : unsafe uninitialized nondrop $payload : ty, methods :
-             [$($objcmethod : literal => unsafe $methodfn : expr $(,) ?) +]
-         }) =>
-        {
-            objr :: __objc_subclass_impl_with_payload_with_methods!
-            ($pub, $identifier, $objcname, $superclass, $payload,
-             [$($objcmethod => $methodfn) *]) ;
-        } ;
-    }
-} */
 mod exception {
-    ///! Support for objc exceptions.
     use std::ffi::c_void;
-    ///Declared in hard-exception.m and compiled with build.rs
     extern "C" {
         fn hard_exception(call: extern "C" fn(*mut c_void),
                           context: *mut c_void);
@@ -3384,16 +2425,8 @@ mod exception {
      -> *mut c_void {
         loop { }
     }
-    ///This function catches an objc exception raised in the closure.
-    ///
-    /// Return values are not supported, this is primarily intended to facilitate debugging.
     pub fn try_unwrap_void<F: FnOnce()>(closure: F) { loop { } }
 }
-///This prelude provides a "foundation-like" experience.  This brings
-/// in various foundation types, like NSObject, NSString, etc.
-///
-/// In this crate we generally only implement types that are strictly necessary,
-/// for other foundation types see other crates.
 mod foundation {
     pub use super::nsstring::NSString;
     pub use super::nsobject::NSObject;
@@ -3402,7 +2435,6 @@ mod foundation {
     pub use super::class::ObjcClass;
     pub use super::nserror::NSError;
 }
-///This namespace includes items that are appropriate for writing bindings
 pub mod bindings {
     pub use super::autorelease::{ActiveAutoreleasePool, AutoreleasePool};
     pub use super::objectpointers::{StrongCell, AutoreleasedCell,
