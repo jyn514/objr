@@ -5,46 +5,6 @@ use std::prelude::rust_2018::*;
 extern crate std;
 extern crate self as objr;
 pub mod macros {
-
-
-
-
-
-
-    //import macros
-
-
-    //used by macros
-
-
-
-
-
-
-
-
-
-    //! Implements a variety of macros for simple objc binding declarations
-    ///Helps generate bindings for an objc enum, as a struct with const members.
-    ///
-    /// # example
-    ///
-    /// ```
-    ///# use objr::bindings::*;
-    ///objc_enum! {
-    ///     pub struct MTLPixelFormat<u32>;
-    ///     impl MTLPixelFormat {
-    ///         MTLPixelFormatInvalid = 0
-    ///     }
-    /// }
-    ///```
-    /// # Notes
-    /// This macro requires
-    /// * a struct with a single field
-    /// * implementation block
-    /// * value-level macros, like `API_AVAILABLE`, to be removed.  If you need to figure out a situation for old OS, do it yourself.
-    ///   You can find and remove such lines with the regex `API_AVAILABLE\(.*\)`.
-    /// * Certain complex comments need to be removed, although simple block comments appear to work in my testing.
     #[macro_export]
     macro_rules! objc_enum {
         ($(#[$attribute : meta]) * $pub : vis struct $enum : ident < $type :
@@ -58,7 +18,6 @@ pub mod macros {
     }
 }
 mod class {
-    ///! Implementation of ObjC classes.  Classes are distinct from instances (which could be, for example, protocols).
     use std::ffi::{c_void, CStr};
     use super::performselector::PerformablePointer;
     use super::bindings::*;
@@ -70,9 +29,6 @@ mod class {
         fn objc_lookUpClass(name: *const c_char)
         -> *mut c_void;
     }
-    ///Untyped pointer to ObjC class.
-    ///
-    /// The actual class type is erased.  Any use of this type is likely unsafe.
     #[repr(transparent)]
     pub struct AnyClass(c_void);
     #[automatically_derived]
@@ -85,27 +41,10 @@ mod class {
     impl PartialEq for AnyClass {
         fn eq(&self, other: &Self) -> bool { loop { } }
     }
-    ///A trait for Rust types that map to ObjC classes.
-    ///
-    /// This is similar to [ObjcInstance] (and requires it) but imposes additional class requirements.
-    ///
-    /// In particular, this rules out the possibility it is a protocol.
-    ///
-    ///
-    /// # Stability
-    /// It is not stable API to impelment this trait directly.  Instead use the [objc_class!] macro.
-    ///
-    /// # Safety
-    /// This is safe because the linker checks that this is a valid class
     pub trait ObjcClass: ObjcInstance + Sized {
         fn class()
         -> &'static Class<Self>;
     }
-    ///Typed pointer to ObjC Class.  Analogous to `*const T`, but points to the class, not the instance.
-    ///
-    /// Used to call "class methods" like `[alloc]`.
-    ///
-    /// To create this type, it's recommended to use `Class::new()`.  For more information, see [objc_class!].
     #[repr(transparent)]
     pub struct Class<T: ObjcClass>(c_void, PhantomData<T>);
     #[automatically_derived]
@@ -121,8 +60,6 @@ mod class {
         fn eq(&self, other: &Self) -> bool { loop { } }
     }
     impl <T: ObjcClass> Class<T> {
-        ///Dynamically creates a Class from some string by querying the ObjC runtime.  Note that in most cases, [NSObject::class()] in combination
-        /// with [objc_class!] macro is a faster implementation because it uses compile-time knowledge.
         pub unsafe fn from_str(cstr: &CStr) -> &'static Self { loop { } }
         ///Converts to an anyclass
         pub fn as_anyclass(&self) -> &'static AnyClass { loop { } }
@@ -134,10 +71,6 @@ mod class {
          -> StrongCell<T> {
             loop { }
         }
-        ///`[Class alloc]`
-        ///
-        /// # Safety
-        /// Unsafe because the underlying memory is uninitialized after this call
         pub unsafe fn alloc(&self, pool: &ActiveAutoreleasePool) -> *mut T {
             loop { }
         }
@@ -147,23 +80,6 @@ mod class {
     impl <T: ObjcClass> std::fmt::Display for Class<T> {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { loop { } }
     }
-    ///This declares an instance type which is also a class.  See [objc_instance!] for a version which is not a class.
-    /// ```
-    /// use objr::bindings::*;
-    /// objc_class! {
-    ///     //Declare a struct with this name, representing our objc class
-    ///     pub struct Example {
-    ///         @class(NSObject)
-    ///     }
-    /// }
-    /// autoreleasepool(|pool| {
-    ///     let instance = Example::class().alloc_init(&pool);
-    ///     let class = Example::class();
-    ///    });
-    ///
-    /// ```
-    ///
-    /// This version does not support generics, to declare a wrapper type (that can be generic), see [objc_class_newtype!]
     #[macro_export]
     macro_rules! objc_class {
         ($(#[$attribute : meta]) * $pub : vis struct $objctype : ident
@@ -174,69 +90,6 @@ mod class {
             :: __objc_implement_class! { $objctype, $objcname }
         } ;
     }
-    /**
-Declares a newtype that wraps an existing [objc_class].
-
-See also:
-* [objc_class].  The oldtype must be declared with this macro.
-* [objc_instance_newtype], the equivalent macro for [objc_instance].
-
-Downcasts to the raw type will be implemented for you.  Upcasts will not, implement them yourself with [objr::bindings::ObjcInstanceBehavior::cast()] if applicable.
-
-```no_run
-use objr::bindings::*;
-objc_class! {
-    struct NSObject {
-        @class(NSObject)
-    }
-}
-objc_class_newtype! {
-    struct NSSecondObject: NSObject;
-}
-let s: &NSSecondObject = todo!();
-let e: &NSObject = s.into();
-
-let s: &mut NSSecondObject = todo!();
-let e: &mut NSObject = s.into();
-```
-
-unlike [objc_class!], this macro supports generic types, allowing you to wrap some other type with generics bolted on top.
-
-At the moment, restrictions on generic arguments are not supported at the type level, but you can add them on your own impl blocks
-```
-use objr::bindings::*;
-objc_class! {
-    struct NSObject { @class(NSObject) }
-}
-objc_class_newtype! {
-    struct SecondObject<A,B>: NSObject;
-}
-//further restriction
-impl<A: PartialEq,B: PartialEq> SecondObject<A,B> { }
-```
-
-Although newtypes declared with this macro conform to ObjcClass, keep in mind that their newtypeness is a Rust construct,
-and is not visible to ObjC:
-
-```
-use objr::bindings::*;
-objc_class_newtype! {
-    struct NotNSObject: NSObject;
-}
-fn static_assert_isclass<T: ObjcClass>(t: &T) {}
-
-autoreleasepool(|pool| {
-    //create a plain old NSObject
-    let oldtype = NSObject::class().alloc_init(pool);
-    //upgrade it to newtype
-    let newtype: &NotNSObject = unsafe{ oldtype.cast() };
-    //confirm newtype conforms to ObjcClass
-    static_assert_isclass(newtype);
-    //however, it isn't a distinct class.  It was NSObject the whole time!
-    assert_eq!(NSObject::class().as_anyclass(),NotNSObject::class().as_anyclass())
-})
-```
-*/
     #[macro_export]
     macro_rules! objc_class_newtype {
         ($(#[$attribute : meta]) * $pub : vis struct $newtype : ident
@@ -2392,14 +2245,7 @@ mod performselector {
         pub(crate) fn objc_retainAutoreleasedReturnValue(id: *const c_void)
         -> *mut c_void;
     }
-    ///Trait that provides `PerformSelector` implementations.  Autoimplelmented for `T: PerformablePointer`
-    ///
-    /// # Stability
-    /// Do not implement this trait yourself.  Instead use [objc_instance!] or [objc_class!]
     pub trait PerformsSelector {
-        ///Performs selector, returning a primitive type.
-        /// # Safety
-        /// See the safety section of [objc_instance!].
         unsafe fn perform_primitive<A: Arguments,
                                     R: Primitive>(receiver: *mut Self,
                                                   selector: Sel,
@@ -2407,18 +2253,11 @@ mod performselector {
                                                       &ActiveAutoreleasePool,
                                                   args: A)
         -> R;
-        ///Performs, returning the specified [ObjcInstance].  You must coerce this into some type according to your knowledge of ObjC convention.
         unsafe fn perform<A: Arguments,
                           R: ObjcInstance>(receiver: *mut Self, selector: Sel,
                                            pool: &ActiveAutoreleasePool,
                                            args: A)
         -> *const R;
-        ///Performs, returning the result of the specified [ObjcInstance].  You must coerce this into some type according to your knowledge of ObjC convention.
-        ///
-        /// By convention, the error value is an autoreleased [NSError].
-        ///
-        ///# Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_result<'a, A: Arguments,
                                  R: ObjcInstance>(receiver: *mut Self,
                                                   selector: Sel,
@@ -2426,12 +2265,6 @@ mod performselector {
                                                       &'a ActiveAutoreleasePool,
                                                   args: A)
         -> Result<*const R, AutoreleasedCell<'a, NSError>>;
-        ///Performs, returning the specified [ObjcInstance].
-        ///
-        /// This variant assumes 1) the calling convention is +0, 2) the type returned to you is +1.  The implementation
-        /// knows a trick to perform this conversion faster than you can do it manually.
-        ///# Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_autorelease_to_retain<A: Arguments,
                                                 R: ObjcInstance>(receiver:
                                                                      *mut Self,
@@ -2441,13 +2274,6 @@ mod performselector {
                                                                      &ActiveAutoreleasePool,
                                                                  args: A)
         -> *const R;
-        ///Performs, returning the specified [ObjcInstance].
-        ///
-        /// This variant assumes 1) the calling convention is +0, 2) the type returned to you is +1.  The implementation
-        /// knows a trick to perform this conversion faster than you can do it manually.
-        ///By convention, the error value is an autoreleased [NSError].
-        ///# Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_result_autorelease_to_retain<A: Arguments,
                                                        R: ObjcInstance>(receiver:
                                                                             *mut Self,
@@ -2459,17 +2285,6 @@ mod performselector {
                                                                             A)
         -> Result<*const R, AutoreleasedCell<'_, NSError>>;
     }
-    ///implementation detail of perform_autorelease_to_strong_nonnull
-    /// written here to ensure tailcall optimization
-    ///
-    /// # Safety
-    /// Issues include:
-    /// 1.  ptr argument is raw and we don't check anything
-    /// 2.  This function logically increments a reference count (may be elided at runtime)
-    ///
-    /// Optimal performance of this function requires the compiler to do tailcall optimization.
-    /// Hopefully I've written it clearly enough for it to understand.
-    #[inline(always)]
     unsafe fn magic_retaining_trampoline<A: Arguments,
                                          R: ObjcInstance>(ptr: *mut c_void,
                                                           selector: Sel,
@@ -2479,10 +2294,6 @@ mod performselector {
      -> *const R {
         loop { }
     }
-    /// Variant of [magic_retaining_trampoline] for super.
-    /// # Safety
-    /// In addition to the issues of [magic_retaining_trampoline], there is no verification that you have passed the correct super_class.
-    #[inline(always)]
     unsafe fn magic_retaining_trampoline_super<A: Arguments,
                                                R: ObjcInstance>(ptr:
                                                                     *mut c_void,
@@ -2496,7 +2307,6 @@ mod performselector {
         loop { }
     }
     impl <T: PerformablePointer> PerformsSelector for T {
-        #[inline]
         unsafe fn perform_primitive<A: Arguments,
                                     R: Primitive>(receiver: *mut Self,
                                                   selector: Sel,
@@ -2505,14 +2315,12 @@ mod performselector {
                                                   args: A) -> R {
             loop { }
         }
-        #[inline]
         unsafe fn perform<A: Arguments,
                           R: ObjcInstance>(receiver: *mut Self, selector: Sel,
                                            pool: &ActiveAutoreleasePool,
                                            args: A) -> *const R {
             loop { }
         }
-        #[inline]
         unsafe fn perform_result<'a, A: Arguments,
                                  R: ObjcInstance>(receiver: *mut Self,
                                                   selector: Sel,
@@ -2522,7 +2330,6 @@ mod performselector {
          -> Result<*const R, AutoreleasedCell<'a, NSError>> {
             loop { }
         }
-        #[inline]
         unsafe fn perform_autorelease_to_retain<A: Arguments,
                                                 R: ObjcInstance>(receiver:
                                                                      *mut Self,
@@ -2534,7 +2341,6 @@ mod performselector {
          -> *const R {
             loop { }
         }
-        #[inline]
         unsafe fn perform_result_autorelease_to_retain<'a, A: Arguments,
                                                        R: ObjcInstance>(receiver:
                                                                             *mut Self,
@@ -2603,14 +2409,6 @@ mod performselector {
                                                                        args:
                                                                            A)
         -> *const R;
-        ///Performs, returning the specified [ObjcInstance].
-        ///
-        /// This variant assumes 1) the calling convention is +0, 2) the type returned to you is +1.  The implementation
-        /// knows a trick to perform this conversion faster than you can do it manually.
-        ///By convention, the error value is an autoreleased [NSError].
-        ///
-        /// # Safety
-        ///See the safety section of [objc_instance!].
         unsafe fn perform_super_result_autorelease_to_retain<A: Arguments,
                                                              R: ObjcInstance>(receiver:
                                                                                   *mut Self,
@@ -2623,7 +2421,6 @@ mod performselector {
         -> Result<*const R, AutoreleasedCell<'_, NSError>>;
     }
     impl <T: PerformableSuper> PerformsSelectorSuper for T {
-        #[inline]
         unsafe fn perform_super_primitive<A: Arguments,
                                           R: Primitive>(receiver: *mut Self,
                                                         selector: Sel,
@@ -2632,7 +2429,6 @@ mod performselector {
                                                         args: A) -> R {
             loop { }
         }
-        #[inline]
         unsafe fn perform_super<A: Arguments,
                                 R: ObjcInstance>(receiver: *mut Self,
                                                  selector: Sel,
@@ -2640,7 +2436,6 @@ mod performselector {
                                                  args: A) -> *const R {
             loop { }
         }
-        #[inline]
         unsafe fn perform_super_result<A: Arguments,
                                        R: ObjcInstance>(receiver: *mut Self,
                                                         selector: Sel,
@@ -2650,7 +2445,6 @@ mod performselector {
          -> Result<*const R, AutoreleasedCell<'_, NSError>> {
             loop { }
         }
-        #[inline]
         unsafe fn perform_super_autorelease_to_retain<A: Arguments,
                                                       R: ObjcInstance>(receiver:
                                                                            *mut Self,
@@ -2663,7 +2457,6 @@ mod performselector {
          -> *const R {
             loop { }
         }
-        #[inline]
         unsafe fn perform_super_result_autorelease_to_retain<A: Arguments,
                                                              R: ObjcInstance>(receiver:
                                                                                   *mut Self,
@@ -3175,7 +2968,6 @@ impl<A: PartialEq,B: PartialEq> SecondExample<A,B> { }
     }
 }
 mod typealias {
-    //! These are typealiases to the types used in objc
     use std::os::raw::{c_ulong};
     #[cfg(target_pointer_width = "64")]
     pub(crate) type NSUInteger = c_ulong;
@@ -3188,7 +2980,6 @@ mod sel {
         fn sel_registerName(string: *const c_char)
         -> *const c_void;
     }
-    ///ObjC-compatible selector.  This type is repr-transparent and can go over the wire as an arg.
     #[repr(transparent)]
     pub struct Sel(*const c_void);
     #[automatically_derived]
@@ -3197,7 +2988,6 @@ mod sel {
     #[automatically_derived]
     #[allow(unused_qualifications)]
     impl ::core::clone::Clone for Sel {
-        #[inline]
         fn clone(&self) -> Sel { loop { } }
     }
     #[automatically_derived]
@@ -3223,31 +3013,6 @@ mod sel {
     #[export_name = "\x01L_OBJC_IMAGE_INFO"]
     #[used]
     static IMAGE_INFO: [u32; 2] = [0, 64];
-    ///Statically declares a selector and makes it available for use.
-    ///
-    /// Before the program entrypoint, dyld will identify these selectors and replace them
-    /// with the value known to the ObjC runtime.  This is substantially faster than `Sel::from_str()` which is a runtime behavior
-    /// that involves acquiring a lock.
-    ///
-    /// # Example
-    /// ```
-    /// use objr::objc_selector_group;
-    /// use objr::bindings::*;
-    /// objc_selector_group!(
-    ///         //Declare a trait.  The trait will have members for each selector.
-    ///         trait NSObjectSelectors {
-    ///             //each ObjC selector, in normal ObjC selector syntax
-    ///             @selector("description")
-    ///             @selector("respondsToSelector:")
-    ///             @selector("init")
-    ///         }
-    ///         //Implement the trait on Sel.  This allows the use of `Sel::description()` etc.
-    ///         impl NSObjectSelectors for Sel {}
-    ///     );
-    /// unsafe {
-    ///     let my_selector = Sel::description();
-    /// }
-    /// ```
     #[macro_export]
     macro_rules! objc_selector_group {
         ($(#[$attribute : meta]) * $pub : vis trait $trait : ident
@@ -3316,6 +3081,7 @@ mod nserror {
         }
     }
 }
+/*
 mod subclass {
     #[macro_export]
     #[doc(hidden)]
@@ -3855,7 +3621,7 @@ mod subclass {
              [$($objcmethod => $methodfn) *]) ;
         } ;
     }
-}
+} */
 mod exception {
     ///! Support for objc exceptions.
     use std::ffi::c_void;
@@ -3905,22 +3671,15 @@ pub mod bindings {
     pub use crate::objc_class;
     pub use crate::objc_enum;
     pub use crate::objc_selector_group;
-    pub use crate::objc_subclass;
     pub use crate::objc_instance_newtype;
     pub use crate::objc_class_newtype;
     pub use super::class::AnyClass;
     pub use super::arguments::{Primitive, Arguable};
     pub use super::exception::{try_unwrap_void};
     pub use super::objcinstance::ObjcInstanceBehavior;
-    ///Used by macros, not public API
     #[doc(hidden)]
     pub use super::sel::_SyncWrapper;
 }
 mod private {
-    ///"Sealed trait" pattern.  Traits will inherit from this trait to indicate they cannot be implemented outside the crate.
-    ///
-    /// See [the documentation](https://rust-lang.github.io/api-guidelines/future-proofing.html) for details.
-    ///
-    /// We are free to implement `Sealed` on any type from inside the crate; this is often necessary to implement some other `Trait: Sealed` on the type.
     pub trait Sealed { }
 }
